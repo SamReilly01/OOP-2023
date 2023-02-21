@@ -1,103 +1,113 @@
 package ie.tudublin;
 
 import java.util.ArrayList;
-
 import processing.core.PApplet;
 import processing.data.Table;
 import processing.data.TableRow;
 
-import processing.data.*;
-
 public class StarMap extends PApplet {
 
     ArrayList<Star> stars = new ArrayList<Star>();
-    
-    public float border;
+    float border;
 
-    void drawGrid()
-    {
-        stroke(255, 0, 255);
+    void drawGrid() {
+        stroke(110, 92, 100);
         textAlign(CENTER, CENTER);
         textSize(20);
-        for(int i = -5; i <=5; i ++)
-        {
+        for (int i = -5; i <= 5; i++) {
             float x = map(i, -5, 5, border, width - border);
             line(x, border, x, height - border);
             line(border, x, width - border, x);
-            fill(255);
+            fill(110, 92, 100);
             text(i, x, border * 0.5f);
             text(i, border * 0.5f, x);
         }
     }
 
-    void printStars()
-    {
-        for(Star s:stars)
-        {
+    void printStars() {
+        for (Star s : stars) {
             System.out.println(s);
         }
     }
 
-    void loadStars()
-    {
+    class Star {
+        boolean habitable;
+        String displayName;
+        float distance;
+        float xg, yg, zg;
+        float absMag;
+
+        public Star(boolean habitable, String displayName, float distance, float xg, float yg, float zg, float absMag) {
+            this.habitable = habitable;
+            this.displayName = displayName;
+            this.distance = distance;
+            this.xg = xg;
+            this.yg = yg;
+            this.zg = zg;
+            this.absMag = absMag;
+        }
+
+        public float getXg() {
+            return xg;
+        }
+
+        public float getYg() {
+            return yg;
+        }
+
+        public float getZg() {
+            return zg;
+        }
+
+        void render(PApplet pa) {
+            float starSize = 16;
+            float sc = 0.6f / distance;
+            float sx = map(xg / distance, -1, 1, 0, pa.width);
+            float sy = map(yg / distance, -1, 1, 0, pa.height);
+            pa.stroke(255, 255, 0);
+			pa.fill(0, 0, 100);
+            pa.line(sx - starSize, sy - starSize, sx + starSize, sy + starSize);
+            pa.line(sx - starSize, sy + starSize, sx + starSize, sy - starSize);
+            pa.stroke(0, 0, 100);
+            pa.line(sx, sy, sx + (zg * sc), sy - (zg * sc));
+        }
+    }
+
+    void loadStars() {
         Table table = loadTable("HabHYG15ly.csv", "header");
-        for(TableRow r:table.rows())
-        {
-            Star s = new Star(r);
+        for (TableRow r : table.rows()) {
+            Star s = new Star(
+                r.getInt("Hab?") == 1, 
+                r.getString("Display Name"), 
+                r.getFloat("Distance"),
+                r.getFloat("Xg"),
+                r.getFloat("Yg"),
+                r.getFloat("Zg"),
+                r.getFloat("AbsMag")
+            );
             stars.add(s);
         }
     }
 
     public void settings() {
-        size(800, 800);
+        size(500, 500);
     }
 
     Star first = null;
     Star second = null;
 
-
-
-    public void mouseClicked()
-    {
-        for(Star s:stars)
-        {
-            float x = map(s.getxG(), -5, 5, border, width - border);
-            float y = map(s.getyG(), -5, 5, border, height - border);
-
-            if (dist(mouseX, mouseY, x, y) < 20)
-            {
-                if (first == null)
-                {
-                    first = s;
-                    break;
-                }
-                else if (second == null)
-                {
-                    second = s;
-                    break;
-                } 
-                else
-                {
-                    first = s;
-                    second = null;
-                    break;
-                }
-            }
-        }
-    }
-
     public void setup() {
-        colorMode(RGB);
+        colorMode(HSB);
+        background(0);
+        smooth();
+        border = width * 0.1f;
         loadStars();
         printStars();
-
         border = width * 0.1f;
     }
 
-    public void drawStars()
-    {
-        for(Star s:stars)
-        {
+    void drawStars() {
+        for (Star s : stars) {
             s.render(this);
         }
     }
@@ -108,31 +118,6 @@ public class StarMap extends PApplet {
         drawGrid();
         drawStars();
 
-        if (first != null)
-        {
-
-            float x = map(first.getxG(), -5, 5, border, width - border);
-            float y = map(first.getyG(), -5, 5, border, height - border);
-
-            if (second != null)
-            {
-                float x2 = map(second.getxG(), -5, 5, border, width - border);
-                float y2 = map(second.getyG(), -5, 5, border, height - border);
-
-                stroke(255, 255, 0);
-                line(x, y, x2, y2);
-
-                float dist = dist(first.getxG(), first.getyG(), first.getzG(), second.getxG(), second.getyG(), second.getzG());
-
-                fill(255);
-                textAlign(CENTER, CENTER);
-                text("Distance between: " + first.getDisplayName() + " and " + second.getDisplayName() + " is " + dist + " parsecs", width / 2, height - (border * 0.5f));
-            }
-            else
-            {
-                stroke(255, 255, 0);
-                line(x, y, mouseX, mouseY);
-            }
-        }
     }
+
 }
